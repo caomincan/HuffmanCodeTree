@@ -24,4 +24,8 @@ The codes will be printed out like figure 5.31 in book
 |U|37|100|
 |Z|2|111100|
 
+$ Document -g <filename.txt>
+
+This command will generate key.txt from <filename.txt>. It counts each letter appeared in filename.txt then turn it into Huffman coding tree. The store key.txt contains the information of letter frequencies, which is used to compress the documents.It will output |letter|frequency|code| to screen
+
    
