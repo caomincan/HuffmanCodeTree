@@ -34,5 +34,5 @@ This command will compress the [filename.txt] based on key.txt. If key.txt does 
 
 $ Document -r [filename.txt]
 
-This command will decompress the file according to key.txt. If there is no key.txt, it does nothing.
+This command will decompress the file according to key.txt. If there is no key.txt, it does nothing.The output file will named as "refilename.txt" IMPORTANT: the file name is the original file name except key words "compressed". e.g you want to decompress [compresseddream.txt], the command should be $ Document -r dream.txt
    
