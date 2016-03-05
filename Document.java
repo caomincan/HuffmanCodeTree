@@ -3,7 +3,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
-import java.io.IOException;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -11,6 +10,7 @@ import java.util.HashMap;
 import java.util.List;
 
 public class Document{
+	public final static char[] MASK ={0x80,0x40,0x20,0x10,0x08,0x04,0x02,0x01};
 	//private HufTree code;
 	private String[] var;
 	private HashMap<String,Integer> Map;
@@ -43,7 +43,7 @@ public class Document{
 		return heap;
 	}
 	/**
-	 *  build such huffman coding tree
+	 *  build such Huffman coding tree
 	 * @param heap
 	 */
 	public void buildTree(){
@@ -66,21 +66,119 @@ public class Document{
 		}
 	}
 	/**
-	 *  Encoding String to "01" type
-	 * @param s
+	 * Encode the documents based on key.txt file
+	 * @param src
 	 * @return
+	 * @throws Exception
 	 */
-	public String Encode(String s){
-		int size = s.length();
-		if(size == 0 || this.head==null) return "";
-		String result ="";
-		String mid ="";
-		for(int i=0;i<size;i++){
-			mid = "";
-			mid = head.weight2code(head.root(),String.valueOf(s.charAt(i)),mid);
-			result += mid;
-		}
-		return result;
+	@SuppressWarnings("resource")
+	public boolean encodeDoc(String src) throws Exception{
+		  BufferedReader bufferedReader= null;
+	       try{
+	    	   bufferedReader = new BufferedReader(new FileReader(src)); 
+           }catch(FileNotFoundException e){
+	    	   System.out.print("No such file or directory\n");
+	    	   return false;
+	       }
+	       File file = new File("compressed"+src); 
+		   FileOutputStream fos;
+			try {
+				fos = new FileOutputStream(file);
+			} catch (FileNotFoundException e) {
+				System.out.print("Could not open or create key.txt\n");
+				return false;
+			}
+		   PrintStream ps = new PrintStream(fos);
+		   int c= 0;
+		   String binary,C;
+		   String mid = "";
+		   char var=0;
+     	  while ((c = bufferedReader.read()) != -1){
+     		    binary = "";
+     		    C = Character.valueOf((char) c).toString();
+     		    binary = this.head.weight2code(this.head.root(), C, binary);
+     		    mid += binary;
+     		    if(mid.length()>8){
+     		    	String tmp = mid.substring(0, 8);
+     		    	mid = mid.substring(8);
+     		    	var = 0;
+     		    	for(int i=0;i<8;i++){
+     		    		if(tmp.charAt(i) == '0'){
+    		    			var <<=1;
+    		    		}else{
+    		    			var<<=1;
+    		    			var |= 0x01;
+    		    		}
+     		    	}
+     		    	ps.print(var);
+     		    } // if mid lenght >8    
+     	 } // end while EOF of file
+     	  // if mid still have value
+     	  if(mid.length()>0){
+     		    var = 0;
+		    	for(int i=0;i<8;i++){
+		    	 if(i<mid.length())	{
+		    		if(mid.charAt(i) == '0'){
+		    			var <<=1;
+		    		}else{
+		    			var<<=1;
+		    			var |= 0x01;
+		    		}
+		    	 }else
+		    		 var<<=1;
+		    	}
+		    	ps.print(var);
+     	  }
+     	  bufferedReader.close();
+     	  ps.close();
+     	  return true;
+	}
+	/**
+	 * Decode the text file according to key.txt
+	 * @param src
+	 * @return
+	 * @throws Exception
+	 */
+	@SuppressWarnings("resource")
+	public boolean decodeDoc(String src) throws Exception{
+		 BufferedReader bufferedReader= null;
+	       try{
+	    	   bufferedReader = new BufferedReader(new FileReader("compressed"+src)); 
+         }catch(FileNotFoundException e){
+	    	   System.out.print("No such file or directory\n");
+	    	   return false;
+	       }
+	       File file = new File("re"+src); 
+		   FileOutputStream fos;
+			try {
+				fos = new FileOutputStream(file);
+			} catch (FileNotFoundException e) {
+				System.out.print("Could not open or create re"+src+'\n');
+				return false;
+			}
+		PrintStream ps = new PrintStream(fos);
+	    int c = 0;
+ 		String result="";
+ 		HufBaseNode node;
+ 		node = this.head.root();
+	     while ((c = bufferedReader.read()) != -1){
+	    	 char x = (char) c;
+	    	 for(int j=0;j<8;j++){
+	    		 if((x&MASK[j])==0){
+	    			 node = node.left();
+	    			 }else{
+	    				 node = node.right();
+	    				 }
+	    		 if(node.isLeaf()){
+	    			 result =node.getEle();
+	    			 ps.print(result);
+	    			 node = this.head.root();
+	    			 }
+	    		 }
+	    	 }// end while
+	     bufferedReader.close();
+	     ps.close();
+	     return true;
 	}
 	/**
 	 * Create or overwrite key.txt file store letters frequency information
@@ -213,8 +311,32 @@ public class Document{
     			}else{
     				doc.buildTree();
     			}
-    			
+    			if(doc.encodeDoc(name)){
+    				System.out.print("Success Encode the txt file!\n");
+    			}else{
+    				System.out.print("Fail to Encode the txt file!\n");
+    			}
   			  break;
+  			// Retrieve the compressed file 
+    		case "-r":
+    			if(args.length != 2) {
+    				  System.out.print("No input text file!\n");
+    				  break;
+    				  }
+      			  name = args[1];
+      			if(!doc.readKeyFile()){
+    				doc.countFreq(name);
+    				doc.buildTree();
+    				doc.writeKeyFile(0);
+    			}else{
+    				doc.buildTree();
+    			}
+      			if(doc.decodeDoc(name)){
+      				System.out.print("Success Decode the txt file!\n");
+      			}else{
+      				System.out.print("Fail to Decode the txt file!\n");
+      			}
+    			break;
     		// demo case
     		case "-demo":
     			   HashMap<String,Integer> map = new HashMap<String,Integer>();
