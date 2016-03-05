@@ -354,6 +354,9 @@ public class Document{
     	      			System.out.print(var[i]+" "+freq[i].toString()+" "+result+'\n');
     	      			}
                    break;
+            default:
+            	System.out.print("No match augment!\n");
+            	break;
           }// switch case
             
     	} // if args != 0	
